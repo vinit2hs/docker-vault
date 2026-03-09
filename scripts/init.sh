@@ -113,29 +113,28 @@ echo -e "${BLUE}╚════════════════════�
 echo -e "  OS: ${OS}  |  compose: ${DC}  |  json: ${JSON_TOOL}"
 echo ""
 
-# ── 1. Preparar volumes ───────────────────────────────────────────────────────
+# ── 1. Parar containers existentes ────────────────────────────────────────────
+log "Parando containers existentes (se houver)..."
+$DC -f "$ROOT_DIR/docker-compose.yml" down 2>/dev/null || true
+ok "Containers parados."
+
+# ── 2. Preparar volumes ANTES de subir o container ────────────────────────────
 log "Preparando volumes de dados..."
 mkdir -p "$ROOT_DIR/runtime/data" "$ROOT_DIR/runtime/logs"
 # No Linux, bind mounts preservam permissões do host; o usuário vault (UID 100)
 # dentro do container precisa de escrita — chmod 777 garante compatibilidade.
+# IMPORTANTE: os diretórios devem existir ANTES do container subir,
+# caso contrário o Docker cria o bind mount sem permissões corretas.
 chmod -R 777 "$ROOT_DIR/runtime/data" "$ROOT_DIR/runtime/logs"
-ok "Volumes preparados."
+ok "Volumes preparados: $(ls -ld "$ROOT_DIR/runtime/data" | awk '{print $1, $3, $4}')"
 
-# ── 2. Iniciar containers ─────────────────────────────────────────────────────
+# ── 3. Iniciar containers ─────────────────────────────────────────────────────
 log "Iniciando containers..."
 $DC -f "$ROOT_DIR/docker-compose.yml" up -d
 ok "Containers iniciados."
 sleep 5  # aguarda o processo vault iniciar dentro do container
 
-# Verificar se o bind mount está funcionando
-log "Verificando bind mount..."
-MOUNT_TEST=$(docker exec "$CONTAINER" sh -c 'ls -ld /vault/data 2>/dev/null' || echo "FAILED")
-if echo "$MOUNT_TEST" | grep -q "FAILED"; then
-  err "Bind mount /vault/data não está acessível dentro do container."
-fi
-ok "Bind mount verificado."
-
-# ── 2. Aguardar Vault ─────────────────────────────────────────────────────────
+# ── 4. Aguardar Vault ─────────────────────────────────────────────────────────
 # Verificar se o container está realmente rodando
 if ! docker ps --filter "name=^${CONTAINER}$" --filter "status=running" --format '{{.Names}}' | grep -q "^${CONTAINER}$"; then
   warn "Container '$CONTAINER' não está em execução. Logs:"
