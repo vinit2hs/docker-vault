@@ -1,0 +1,13 @@
+# Dados gerados em runtime (vault storage)
+runtime/
+
+# Credenciais sensíveis — NUNCA commitar
+init-output.json
+.env.laravel
+SETUP-NOTES.md
+
+# Variáveis de ambiente com valores reais (copie de .env.example)
+.env
+
+# macOS
+.DS_Store

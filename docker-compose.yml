@@ -1,0 +1,23 @@
+services:
+  vault:
+    image: hashicorp/vault:latest
+    container_name: vault
+    restart: unless-stopped
+    cap_add:
+      - IPC_LOCK
+    ports:
+      - "${VAULT_PORT:-8200}:8200"
+    volumes:
+      - ./config:/vault/config:ro
+      - ./policies:/vault/policies:ro
+      - ./runtime/data:/vault/data
+      - ./runtime/logs:/vault/logs
+    environment:
+      VAULT_ADDR: "http://127.0.0.1:8200"
+    command: vault server -config=/vault/config/vault.hcl
+    healthcheck:
+      test: ["CMD", "sh", "-c", "vault status > /dev/null 2>&1 || true"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
