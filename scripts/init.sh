@@ -113,15 +113,27 @@ echo -e "${BLUE}╚════════════════════�
 echo -e "  OS: ${OS}  |  compose: ${DC}  |  json: ${JSON_TOOL}"
 echo ""
 
-# ── 1. Iniciar containers ─────────────────────────────────────────────────────
+# ── 1. Preparar volumes ───────────────────────────────────────────────────────
+log "Preparando volumes de dados..."
 mkdir -p "$ROOT_DIR/runtime/data" "$ROOT_DIR/runtime/logs"
 # No Linux, bind mounts preservam permissões do host; o usuário vault (UID 100)
 # dentro do container precisa de escrita — chmod 777 garante compatibilidade.
-chmod 777 "$ROOT_DIR/runtime/data" "$ROOT_DIR/runtime/logs"
+chmod -R 777 "$ROOT_DIR/runtime/data" "$ROOT_DIR/runtime/logs"
+ok "Volumes preparados."
+
+# ── 2. Iniciar containers ─────────────────────────────────────────────────────
 log "Iniciando containers..."
 $DC -f "$ROOT_DIR/docker-compose.yml" up -d
 ok "Containers iniciados."
 sleep 5  # aguarda o processo vault iniciar dentro do container
+
+# Verificar se o bind mount está funcionando
+log "Verificando bind mount..."
+MOUNT_TEST=$(docker exec "$CONTAINER" sh -c 'ls -ld /vault/data 2>/dev/null' || echo "FAILED")
+if echo "$MOUNT_TEST" | grep -q "FAILED"; then
+  err "Bind mount /vault/data não está acessível dentro do container."
+fi
+ok "Bind mount verificado."
 
 # ── 2. Aguardar Vault ─────────────────────────────────────────────────────────
 # Verificar se o container está realmente rodando
