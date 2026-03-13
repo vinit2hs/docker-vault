@@ -34,6 +34,14 @@ path "sys/policies/acl/*" {
   capabilities = ["create", "read", "update", "list"]
 }
 
+# ── KV v2 — leitura e escrita de segredos de tenants ────────────────────────
+path "secret/data/cosip/*" {
+  capabilities = ["create", "read", "update", "delete", "list"]
+}
+path "secret/metadata/cosip/*" {
+  capabilities = ["create", "read", "update", "delete", "list"]
+}
+
 # ── Health check ────────────────────────────────────────────────────────────
 path "sys/health" {
   capabilities = ["read"]

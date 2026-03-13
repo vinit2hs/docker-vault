@@ -37,6 +37,8 @@ while [[ $# -gt 0 ]]; do
     *) err "Parâmetro desconhecido: $1" ;;
   esac
 done
+# Normaliza: remove trailing slashes (evita http://ip/:8200)
+VAULT_ADDR_EXTERNAL="${VAULT_ADDR_EXTERNAL%/}"
 
 # ── Detectar OS ───────────────────────────────────────────────────────────────
 detect_os() {
